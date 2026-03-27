@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -L -o \"d:/Files/Roblox/RobloxWeb/OggVorbisEncoder.js\" \"https://unpkg.com/ogg-vorbis-encoder-js@0.1.1/dist/OggVorbisEncoder.js\")"
+    ]
+  }
+}

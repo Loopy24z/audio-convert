@@ -213,8 +213,43 @@
 
 <footer>Semua proses berjalan 100% di browser — file tidak dikirim ke server apapun.</footer>
 
-<!-- OGG Vorbis Encoder (pure JS, no Worker needed) -->
-<script src="https://cdn.jsdelivr.net/npm/ogg-vorbis-encoder-js@0.1.1/dist/OggVorbisEncoder.js"></script>
+<!-- libvorbis.js: OGG Vorbis encoder (self-hosted, no Worker needed) -->
+<script>var module={exports:{}};var exports=module.exports;</script>
+<script src="/libvorbis.js"></script>
+<script>
+var _libvorbis = module.exports;
+// Browser wrapper for vorbis encoder
+class VorbisEncoder {
+  constructor(sampleRate, channels, quality) {
+    this.ch = channels;
+    this.bufs = [];
+    this.lib = _libvorbis;
+    this.enc = _libvorbis._encoder_init(channels, sampleRate, quality);
+    _libvorbis._encoder_stream_init(this.enc);
+  }
+  encode(buffers) {
+    const len = buffers[0].length;
+    const ab = _libvorbis._encoder_analysis_buffer(this.enc, len) >> 2;
+    for (let c = 0; c < this.ch; c++)
+      _libvorbis.HEAPF32.set(buffers[c], _libvorbis.HEAPU32[ab + c] >> 2);
+    this._proc(len);
+  }
+  _proc(len) {
+    _libvorbis._encoder_process(this.enc, len);
+    const dlen = _libvorbis._encoder_data_len(this.enc);
+    if (dlen > 0) {
+      const d = _libvorbis._encoder_transfer_data(this.enc);
+      this.bufs.push(_libvorbis.HEAPU8.slice(d, d + dlen));
+    }
+  }
+  finish() {
+    this._proc(0);
+    const blob = new Blob(this.bufs, {type:'audio/ogg'});
+    _libvorbis._encoder_clear(this.enc);
+    return blob;
+  }
+}
+</script>
 
 <script>
 // ── State ──────────────────────────────────────────────────────────
@@ -421,10 +456,10 @@ convertBtn.addEventListener('click', async () => {
     setProgress(60, 'Encoding ke OGG…');
 
     // 6. Encode to OGG Vorbis
-    if (typeof OggVorbisEncoder === 'undefined') {
+    if (typeof VorbisEncoder === 'undefined' || typeof _libvorbis === 'undefined') {
       throw new Error('OGG encoder gagal dimuat. Refresh halaman dan coba lagi.');
     }
-    const encoder = new OggVorbisEncoder(sampleRate, channels, 0.4);
+    const encoder = new VorbisEncoder(sampleRate, channels, 0.4);
     // Feed in chunks to avoid UI freeze
     const chunkSize = sampleRate; // 1 second chunks
     const totalSamples = channelArrays[0].length;
@@ -436,12 +471,11 @@ convertBtn.addEventListener('click', async () => {
       // Yield to browser briefly
       await new Promise(r => setTimeout(r, 0));
     }
-    const dataBuffers = encoder.flush();
+    const oggBlob = encoder.finish();
     setProgress(98, 'Menyiapkan unduhan…');
 
     // 7. Create download
-    const blob = new Blob(dataBuffers, {type: 'audio/ogg'});
-    outputURL  = URL.createObjectURL(blob);
+    outputURL = URL.createObjectURL(oggBlob);
     const outName = selectedFile.name.replace(/\.\w+$/, '.ogg');
     downloadBtn.href = outputURL;
     downloadBtn.download = outName;
