@@ -433,8 +433,8 @@ function setSelectedFile(file, name) {
   fileName.textContent = name || file.name;
   fileSize.textContent = formatBytes(file.size);
   fileInfo.classList.add('show');
-  // only enable convert if ffmpeg is ready or loading
-  convertBtn.disabled = false;
+  // only enable convert if ffmpeg is fully loaded
+  convertBtn.disabled = (ffmpegLoadPromise && !ffmpeg);
 }
 
 function clearFile() {
@@ -523,6 +523,8 @@ async function loadFFmpeg() {
     });
 
     spinnerWrap.classList.remove('show');
+    // enable convert if file already selected
+    if (selectedFile) convertBtn.disabled = false;
   })();
 
   return ffmpegLoadPromise;
