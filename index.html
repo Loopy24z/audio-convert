@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio Converter — MP3 ke OGG</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #00d4c8;
+      --accent-dim: #00b5ab;
+      --text: #e4e6f1;
+      --text-muted: #6b7194;
+      --danger: #ff4f6d;
+      --success: #00d4c8;
+      --radius: 14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p {
+      margin-top: 6px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      width: 100%;
+      max-width: 640px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    /* ── Drop zone ── */
+    .dropzone {
+      margin: 20px;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: var(--accent);
+      background: rgba(0, 212, 200, 0.04);
+    }
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .dropzone-icon {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .dropzone p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; }
+    .dropzone p strong { color: var(--text); }
+
+    /* ── File info ── */
+    .file-info {
+      display: none;
+      margin: 0 20px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      gap: 10px;
+      align-items: center;
+    }
+    .file-info.show { display: flex; }
+    .file-info-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .file-info-name { font-weight: 600; color: var(--text); word-break: break-all; }
+    .file-info-size { color: var(--text-muted); font-size: 0.78rem; }
+    .file-remove {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .file-remove:hover { color: var(--danger); }
+
+    /* ── Accordion ── */
+    .accordion-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 20px;
+      cursor: pointer;
+      background: var(--surface2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      user-select: none;
+    }
+    .accordion-header:hover { background: #262a3e; }
+    .accordion-icon { font-size: 1rem; }
+    .accordion-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      flex: 1;
+    }
+    .accordion-summary { font-size: 0.8rem; color: var(--text-muted); }
+    .accordion-chevron {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+    .accordion-chevron.open { transform: rotate(180deg); }
+
+    .accordion-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .accordion-body.hidden { display: none; }
+
+    /* ── Slider row ── */
+    .slider-row label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    .slider-row label span {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 99px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 0 2px var(--accent);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 0 2px var(--accent);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* ── Progress ── */
+    .progress-wrap {
+      display: none;
+      margin: 0 20px 16px;
+    }
+    .progress-wrap.show { display: block; }
+    .progress-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-bar-bg {
+      height: 6px;
+      border-radius: 99px;
+      background: var(--border);
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    /* ── Convert button ── */
+    .btn-convert {
+      display: block;
+      width: calc(100% - 40px);
+      margin: 0 20px 20px;
+      padding: 16px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0f1117;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.2s, transform 0.1s, opacity 0.2s;
+    }
+    .btn-convert:hover:not(:disabled) { background: var(--accent-dim); }
+    .btn-convert:active:not(:disabled) { transform: scale(0.98); }
+    .btn-convert:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Download section ── */
+    .download-section {
+      display: none;
+      margin: 0 20px 20px;
+      background: rgba(0, 212, 200, 0.08);
+      border: 1px solid rgba(0, 212, 200, 0.3);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .download-section.show { display: block; }
+    .download-section p {
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 28px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #0f1117;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-download:hover { background: var(--accent-dim); }
+
+    /* ── Error ── */
+    .error-msg {
+      display: none;
+      margin: 0 20px 16px;
+      background: rgba(255, 79, 109, 0.1);
+      border: 1px solid rgba(255, 79, 109, 0.3);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.84rem;
+      color: var(--danger);
+    }
+    .error-msg.show { display: block; }
+
+    /* ── Loading spinner overlay ── */
+    .spinner-wrap {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin: 0 20px 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .spinner-wrap.show { display: flex; }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🎵 Audio Converter</h1>
+  <p>Konversi MP3 ke OGG langsung di browser — tanpa upload ke server</p>
+</header>
+
+<div class="card">
+
+  <!-- Drop zone -->
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept=".mp3,audio/mpeg,audio/mp3" />
+    <span class="dropzone-icon">📂</span>
+    <p><strong>Klik atau seret file MP3 ke sini</strong><br>Format yang didukung: .mp3</p>
+  </div>
+
+  <!-- File info -->
+  <div class="file-info" id="fileInfo">
+    <span class="file-info-icon">🎵</span>
+    <div>
+      <div class="file-info-name" id="fileName"></div>
+      <div class="file-info-size" id="fileSize"></div>
+    </div>
+    <button class="file-remove" id="fileRemove" title="Hapus file">✕</button>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Advanced settings -->
+  <div class="accordion-header" id="accordionHeader">
+    <span class="accordion-icon">⚙️</span>
+    <span class="accordion-title" id="accordionTitle">Advanced Settings (Speed: 1.0x, Amplify: 0 dB, Max: 300s)</span>
+    <span class="accordion-chevron" id="accordionChevron">▼</span>
+  </div>
+
+  <div class="accordion-body" id="accordionBody">
+
+    <div class="slider-row">
+      <label>
+        Kecepatan
+        <span id="speedVal">1.0x</span>
+      </label>
+      <input type="range" id="speedSlider" min="0.5" max="4.0" step="0.1" value="1.0" />
+    </div>
+
+    <div class="slider-row">
+      <label>
+        Amplifikasi (dB)
+        <span id="ampVal">0 dB</span>
+      </label>
+      <input type="range" id="ampSlider" min="-20" max="20" step="1" value="0" />
+    </div>
+
+    <div class="slider-row">
+      <label>
+        Durasi Maks (detik)
+        <span id="durVal">300s</span>
+      </label>
+      <input type="range" id="durSlider" min="10" max="600" step="10" value="300" />
+    </div>
+
+  </div>
+
+  <!-- Spinner -->
+  <div class="spinner-wrap" id="spinnerWrap">
+    <div class="spinner"></div>
+    <span id="spinnerLabel">Memuat FFmpeg…</span>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label">
+      <span id="progressLabel">Memproses…</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Download -->
+  <div class="download-section" id="downloadSection">
+    <p>✅ Konversi selesai! File siap diunduh.</p>
+    <a class="btn-download" id="downloadBtn" href="#" download>⬇ Unduh OGG</a>
+  </div>
+
+  <!-- Convert -->
+  <button class="btn-convert" id="convertBtn" disabled>Konversi Audio</button>
+
+</div>
+
+<footer>
+  Semua proses berjalan di browser Anda &mdash; file tidak dikirim ke server apapun.<br>
+  Powered by <a href="https://ffmpegwasm.netlify.app/" target="_blank">ffmpeg.wasm</a>
+</footer>
+
+<!-- ffmpeg.wasm via CDN (multi-threaded requires COOP/COEP; use single-thread build) -->
+<script type="module">
+import { FFmpeg } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
+import { fetchFile, toBlobURL } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js';
+
+// ── State ──────────────────────────────────────────────────────────
+let ffmpeg = null;
+let selectedFile = null;
+let outputURL = null;
+
+// ── Elements ───────────────────────────────────────────────────────
+const dropzone      = document.getElementById('dropzone');
+const fileInput     = document.getElementById('fileInput');
+const fileInfo      = document.getElementById('fileInfo');
+const fileName      = document.getElementById('fileName');
+const fileSize      = document.getElementById('fileSize');
+const fileRemove    = document.getElementById('fileRemove');
+const errorMsg      = document.getElementById('errorMsg');
+const accordionHeader = document.getElementById('accordionHeader');
+const accordionTitle  = document.getElementById('accordionTitle');
+const accordionChevron= document.getElementById('accordionChevron');
+const accordionBody   = document.getElementById('accordionBody');
+const speedSlider   = document.getElementById('speedSlider');
+const speedVal      = document.getElementById('speedVal');
+const ampSlider     = document.getElementById('ampSlider');
+const ampVal        = document.getElementById('ampVal');
+const durSlider     = document.getElementById('durSlider');
+const durVal        = document.getElementById('durVal');
+const spinnerWrap   = document.getElementById('spinnerWrap');
+const spinnerLabel  = document.getElementById('spinnerLabel');
+const progressWrap  = document.getElementById('progressWrap');
+const progressLabel = document.getElementById('progressLabel');
+const progressPct   = document.getElementById('progressPct');
+const progressFill  = document.getElementById('progressFill');
+const downloadSection = document.getElementById('downloadSection');
+const downloadBtn   = document.getElementById('downloadBtn');
+const convertBtn    = document.getElementById('convertBtn');
+
+// ── Slider UI ──────────────────────────────────────────────────────
+function updateSliderTrack(slider) {
+  const min = parseFloat(slider.min);
+  const max = parseFloat(slider.max);
+  const val = parseFloat(slider.value);
+  const pct = ((val - min) / (max - min)) * 100;
+  slider.style.background = `linear-gradient(to right, #00d4c8 ${pct}%, #2e3350 ${pct}%)`;
+}
+
+function syncSummary() {
+  const spd  = parseFloat(speedSlider.value).toFixed(1);
+  const amp  = parseInt(ampSlider.value, 10);
+  const dur  = parseInt(durSlider.value, 10);
+  speedVal.textContent = `${spd}x`;
+  ampVal.textContent   = `${amp} dB`;
+  durVal.textContent   = `${dur}s`;
+  accordionTitle.textContent =
+    `Advanced Settings (Speed: ${spd}x, Amplify: ${amp} dB, Max: ${dur}s)`;
+}
+
+[speedSlider, ampSlider, durSlider].forEach(s => {
+  updateSliderTrack(s);
+  s.addEventListener('input', () => { updateSliderTrack(s); syncSummary(); });
+});
+syncSummary();
+
+// ── Accordion ──────────────────────────────────────────────────────
+let accordionOpen = true;
+accordionHeader.addEventListener('click', () => {
+  accordionOpen = !accordionOpen;
+  accordionBody.classList.toggle('hidden', !accordionOpen);
+  accordionChevron.classList.toggle('open', accordionOpen);
+});
+accordionChevron.classList.add('open');
+
+// ── File handling ──────────────────────────────────────────────────
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(2) + ' MB';
+}
+
+function setFile(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.mp3') && file.type !== 'audio/mpeg' && file.type !== 'audio/mp3') {
+    showError('Hanya file MP3 yang didukung.');
+    return;
+  }
+  selectedFile = file;
+  hideError();
+  revokeOutput();
+  downloadSection.classList.remove('show');
+
+  fileName.textContent = file.name;
+  fileSize.textContent = formatBytes(file.size);
+  fileInfo.classList.add('show');
+  convertBtn.disabled = false;
+}
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) setFile(fileInput.files[0]);
+});
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+
+fileRemove.addEventListener('click', () => {
+  selectedFile = null;
+  fileInput.value = '';
+  fileInfo.classList.remove('show');
+  downloadSection.classList.remove('show');
+  convertBtn.disabled = true;
+  hideError();
+  revokeOutput();
+});
+
+// ── Error helpers ──────────────────────────────────────────────────
+function showError(msg) { errorMsg.textContent = msg; errorMsg.classList.add('show'); }
+function hideError() { errorMsg.classList.remove('show'); }
+
+function revokeOutput() {
+  if (outputURL) { URL.revokeObjectURL(outputURL); outputURL = null; }
+}
+
+// ── FFmpeg loader ──────────────────────────────────────────────────
+async function loadFFmpeg() {
+  if (ffmpeg) return;
+  spinnerWrap.classList.add('show');
+  spinnerLabel.textContent = 'Memuat FFmpeg (±25 MB, sekali saja)…';
+  convertBtn.disabled = true;
+
+  ffmpeg = new FFmpeg();
+
+  ffmpeg.on('log', ({ message }) => {
+    // parse progress from ffmpeg log lines
+    const timeMatch = message.match(/time=(\d+):(\d+):(\d+\.\d+)/);
+    if (timeMatch && window._ffmpegDuration) {
+      const h = parseInt(timeMatch[1]);
+      const m = parseInt(timeMatch[2]);
+      const s = parseFloat(timeMatch[3]);
+      const currentSec = h * 3600 + m * 60 + s;
+      const pct = Math.min(100, Math.round((currentSec / window._ffmpegDuration) * 100));
+      setProgress(pct, 'Mengonversi audio…');
+    }
+  });
+
+  const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+  await ffmpeg.load({
+    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+  });
+
+  spinnerWrap.classList.remove('show');
+  if (selectedFile) convertBtn.disabled = false;
+}
+
+// ── Progress helpers ───────────────────────────────────────────────
+function setProgress(pct, label) {
+  progressWrap.classList.add('show');
+  progressFill.style.width = pct + '%';
+  progressLabel.textContent = label;
+  progressPct.textContent = pct + '%';
+}
+function hideProgress() { progressWrap.classList.remove('show'); }
+
+// ── Build atempo filter chain (max 2x or 0.5x per filter) ─────────
+function buildAtempoChain(speed) {
+  // atempo supports 0.5–100 in modern ffmpeg; for safety chain for edge cases
+  if (speed >= 0.5 && speed <= 100) return `atempo=${speed.toFixed(4)}`;
+  // fallback chain
+  const filters = [];
+  let s = speed;
+  while (s > 2.0) { filters.push('atempo=2.0'); s /= 2.0; }
+  while (s < 0.5) { filters.push('atempo=0.5'); s /= 0.5; }
+  filters.push(`atempo=${s.toFixed(4)}`);
+  return filters.join(',');
+}
+
+// ── Convert ────────────────────────────────────────────────────────
+convertBtn.addEventListener('click', async () => {
+  if (!selectedFile) return;
+  hideError();
+  revokeOutput();
+  downloadSection.classList.remove('show');
+
+  try {
+    if (!ffmpeg) await loadFFmpeg();
+    convertBtn.disabled = true;
+
+    const speed   = parseFloat(speedSlider.value);
+    const ampDb   = parseInt(ampSlider.value, 10);
+    const maxDur  = parseInt(durSlider.value, 10);
+
+    // Estimate duration from file size (rough: 128kbps)
+    window._ffmpegDuration = Math.min(selectedFile.size / (128 * 125), maxDur);
+
+    setProgress(0, 'Membaca file…');
+
+    const inputData = await fetchFile(selectedFile);
+    await ffmpeg.writeFile('input.mp3', inputData);
+
+    setProgress(5, 'Membangun filter…');
+
+    // Build audio filter
+    const atempoFilter = buildAtempoChain(speed);
+    const volumeFilter = `volume=${ampDb}dB`;
+    const audioFilter  = `${atempoFilter},${volumeFilter}`;
+
+    const args = [
+      '-i', 'input.mp3',
+      '-t', String(maxDur),
+      '-af', audioFilter,
+      '-c:a', 'libvorbis',
+      '-q:a', '5',
+      '-vn',
+      'output.ogg'
+    ];
+
+    setProgress(10, 'Mengonversi audio…');
+    await ffmpeg.exec(args);
+    setProgress(95, 'Menyiapkan unduhan…');
+
+    const data = await ffmpeg.readFile('output.ogg');
+    const blob = new Blob([data.buffer], { type: 'audio/ogg' });
+    outputURL  = URL.createObjectURL(blob);
+
+    const outName = selectedFile.name.replace(/\.mp3$/i, '.ogg');
+    downloadBtn.href = outputURL;
+    downloadBtn.download = outName;
+
+    // Cleanup ffmpeg virtual fs
+    await ffmpeg.deleteFile('input.mp3');
+    await ffmpeg.deleteFile('output.ogg');
+
+    setProgress(100, 'Selesai!');
+    setTimeout(() => hideProgress(), 800);
+    downloadSection.classList.add('show');
+
+  } catch (err) {
+    hideProgress();
+    console.error(err);
+    showError('Konversi gagal: ' + (err.message || err));
+  } finally {
+    convertBtn.disabled = false;
+  }
+});
+
+// ── Load FFmpeg eagerly in background ─────────────────────────────
+loadFFmpeg().catch(() => {});
+</script>
+</body>
+</html>
