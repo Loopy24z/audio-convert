@@ -514,10 +514,12 @@ async function loadFFmpeg() {
       }
     });
 
-    const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+    const coreBase   = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+    const ffmpegBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm';
     await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      coreURL:   await toBlobURL(`${coreBase}/ffmpeg-core.js`,   'text/javascript'),
+      wasmURL:   await toBlobURL(`${coreBase}/ffmpeg-core.wasm`, 'application/wasm'),
+      workerURL: await toBlobURL(`${ffmpegBase}/worker.js`,       'text/javascript'),
     });
 
     spinnerWrap.classList.remove('show');
