@@ -27,17 +27,6 @@
 
     .card { width: 100%; max-width: 640px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 
-    /* Tabs */
-    .tabs { display: flex; border-bottom: 1px solid var(--border); }
-    .tab-btn {
-      flex: 1; padding: 13px; border: none; background: none;
-      color: var(--text-muted); font-size: 0.88rem; font-weight: 600;
-      cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.2s;
-    }
-    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(0,212,200,0.04); }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-
     /* Dropzone */
     .dropzone {
       margin: 20px; border: 2px dashed var(--border); border-radius: 10px;
@@ -49,25 +38,6 @@
     .dropzone-icon { font-size: 2.4rem; margin-bottom: 10px; display: block; }
     .dropzone p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; }
     .dropzone p strong { color: var(--text); }
-
-    /* URL panel */
-    .url-panel { padding: 20px; }
-    .url-panel p { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.6; }
-    .url-row { display: flex; gap: 8px; }
-    .url-input {
-      flex: 1; padding: 11px 14px; background: var(--surface2);
-      border: 1px solid var(--border); border-radius: 8px; color: var(--text);
-      font-size: 0.88rem; outline: none; transition: border-color 0.2s;
-    }
-    .url-input::placeholder { color: var(--text-muted); }
-    .url-input:focus { border-color: var(--accent); }
-    .btn-fetch {
-      padding: 11px 18px; border: 1px solid var(--border); border-radius: 8px;
-      background: var(--surface2); color: var(--text); font-size: 0.85rem;
-      font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.2s;
-    }
-    .btn-fetch:hover { background: var(--border); }
-    .btn-fetch:disabled { opacity: 0.45; cursor: not-allowed; }
 
     /* File info */
     .file-info { display: none; margin: 0 20px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; gap: 10px; align-items: center; }
@@ -193,28 +163,10 @@
 
 <div class="card">
 
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="file">📁 Upload File</button>
-    <button class="tab-btn" data-tab="url">🔗 Dari URL</button>
-  </div>
-
-  <div class="tab-panel active" id="tab-file">
-    <div class="dropzone" id="dropzone">
-      <input type="file" id="fileInput" accept=".mp3,.wav,.ogg,.m4a,.aac,.flac,audio/*" />
-      <span class="dropzone-icon">📂</span>
-      <p><strong>Klik atau seret file audio ke sini</strong><br>MP3, WAV, OGG, M4A, AAC, FLAC</p>
-    </div>
-  </div>
-
-  <div class="tab-panel" id="tab-url">
-    <div class="url-panel">
-      <p>Masukkan URL langsung ke file audio (MP3, WAV, dll) <strong>atau URL YouTube</strong>.<br>
-      Contoh: <code>https://youtu.be/xxx</code> atau <code>https://www.youtube.com/watch?v=xxx</code></p>
-      <div class="url-row">
-        <input type="url" class="url-input" id="urlInput" placeholder="https://youtu.be/... atau https://example.com/audio.mp3" />
-        <button class="btn-fetch" id="fetchBtn">Ambil</button>
-      </div>
-    </div>
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept=".mp3,.wav,.ogg,.m4a,.aac,.flac,audio/*" />
+    <span class="dropzone-icon">📂</span>
+    <p><strong>Klik atau seret file audio ke sini</strong><br>MP3, WAV, OGG, M4A, AAC, FLAC</p>
   </div>
 
   <div class="file-info" id="fileInfo">
@@ -340,8 +292,6 @@ const fileName    = document.getElementById('fileName');
 const fileSize    = document.getElementById('fileSize');
 const fileRemove  = document.getElementById('fileRemove');
 const errorMsg    = document.getElementById('errorMsg');
-const urlInput    = document.getElementById('urlInput');
-const fetchBtn    = document.getElementById('fetchBtn');
 const accordionHeader = document.getElementById('accordionHeader');
 const accordionTitle  = document.getElementById('accordionTitle');
 const accordionChevron= document.getElementById('accordionChevron');
@@ -360,16 +310,6 @@ const progressFill  = document.getElementById('progressFill');
 const downloadSection = document.getElementById('downloadSection');
 const downloadBtn     = document.getElementById('downloadBtn');
 const convertBtn      = document.getElementById('convertBtn');
-
-// ── Tabs ───────────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-  });
-});
 
 // ── Sliders ────────────────────────────────────────────────────────
 function updateTrack(s) {
@@ -438,37 +378,6 @@ dropzone.addEventListener('drop', e => {
   if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
 });
 fileRemove.addEventListener('click', clearFile);
-
-// ── URL fetch ──────────────────────────────────────────────────────
-const CORS_PROXY = 'https://audio-proxy.verifmlbb629.workers.dev/?url=';
-
-async function fetchAudio(url) {
-  // Try direct first
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res;
-  } catch(_) {}
-  // Fallback via CORS proxy
-  const res = await fetch(CORS_PROXY + encodeURIComponent(url));
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res;
-}
-
-fetchBtn.addEventListener('click', async () => {
-  const url = urlInput.value.trim();
-  if (!url) { showError('Masukkan URL terlebih dahulu.'); return; }
-  hideError(); fetchBtn.disabled = true;
-  fetchBtn.textContent = 'Mengambil…';
-  try {
-    const res = await fetchAudio(url);
-    const blob = await res.blob();
-    const name = url.split('/').pop().split('?')[0] || 'audio.mp3';
-    setFile(new File([blob], name, {type: blob.type || 'audio/mpeg'}), name);
-  } catch(e) {
-    showError('Gagal ambil URL: ' + e.message);
-  } finally { fetchBtn.disabled = false; fetchBtn.textContent = 'Ambil'; }
-});
 
 // ── Progress ───────────────────────────────────────────────────────
 function setProgress(pct, label) {
