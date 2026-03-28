@@ -123,6 +123,64 @@
 
     .note-box { margin: 0 20px 16px; background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.25); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: #a78bfa; }
 
+    /* Speed Normal */
+    .speed-normal-box {
+      margin: 0 20px 16px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+      font-size: 0.85rem;
+    }
+    .speed-normal-label { color: var(--text-muted); }
+    .speed-normal-val { color: var(--accent); font-weight: 700; font-size: 1rem; }
+    .speed-normal-info {
+      margin-left: auto; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--border); color: var(--text-muted); font-size: 0.7rem;
+      display: flex; align-items: center; justify-content: center; cursor: help;
+      position: relative; flex-shrink: 0;
+    }
+    .speed-normal-info:hover::after {
+      content: attr(data-tip);
+      position: absolute; right: 0; top: 24px; background: #1e2235;
+      border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+      font-size: 0.76rem; width: 220px; line-height: 1.5; z-index: 10;
+      color: var(--text); white-space: normal; pointer-events: none;
+    }
+
+    /* History */
+    .history-wrap { width: 100%; max-width: 640px; margin-top: 24px; }
+    .history-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .history-header h2 { font-size: 1rem; font-weight: 700; }
+    .btn-clear-history {
+      font-size: 0.78rem; color: var(--text-muted); background: none; border: none;
+      cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: color 0.15s;
+    }
+    .btn-clear-history:hover { color: var(--danger); }
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .history-item {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+    }
+    .history-thumb { font-size: 1.8rem; flex-shrink: 0; }
+    .history-info { flex: 1; min-width: 0; }
+    .history-name { font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-meta { font-size: 0.76rem; color: var(--text-muted); margin-top: 3px; }
+    .history-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .history-tag {
+      font-size: 0.72rem; padding: 2px 8px; border-radius: 99px;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+    }
+    .history-tag.accent { color: var(--accent); border-color: rgba(0,212,200,0.3); }
+    .history-dl {
+      font-size: 0.8rem; padding: 7px 14px; border: none; border-radius: 7px;
+      background: rgba(0,212,200,0.12); color: var(--accent); font-weight: 600;
+      cursor: pointer; text-decoration: none; white-space: nowrap; flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .history-dl:hover { background: rgba(0,212,200,0.22); }
+    .history-empty { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px; }
+
     footer { margin-top: 40px; font-size: 0.78rem; color: var(--text-muted); text-align: center; }
   </style>
 </head>
@@ -191,6 +249,13 @@
     </div>
   </div>
 
+  <!-- Speed Normal indicator -->
+  <div class="speed-normal-box" id="speedNormalBox">
+    <span class="speed-normal-label">Speed Normal (di game):</span>
+    <span class="speed-normal-val" id="speedNormalVal">0.43</span>
+    <span class="speed-normal-info" data-tip="Roblox memutar audio dengan kecepatan normal (1.0). Jika kamu upload audio yang sudah dipercepat 2.3x, di game audio akan terdengar dengan kecepatan 1/2.3 ≈ 0.43 — mendekati normal.">?</span>
+  </div>
+
   <div class="note-box" id="noteBox" style="display:none">
     ⚡ Memproses audio, harap tunggu…
   </div>
@@ -209,6 +274,17 @@
   </div>
 
   <button class="btn-convert" id="convertBtn" disabled>Konversi Audio</button>
+</div>
+
+<!-- History Section -->
+<div class="history-wrap" id="historyWrap">
+  <div class="history-header">
+    <h2>📋 Riwayat Konversi</h2>
+    <button class="btn-clear-history" id="clearHistoryBtn">Hapus Semua</button>
+  </div>
+  <div class="history-list" id="historyList">
+    <div class="history-empty" id="historyEmpty">Belum ada riwayat konversi.</div>
+  </div>
 </div>
 
 <footer>Semua proses berjalan 100% di browser — file tidak dikirim ke server apapun.</footer>
@@ -300,6 +376,7 @@ function updateTrack(s) {
   const pct = ((parseFloat(s.value) - parseFloat(s.min)) / (parseFloat(s.max) - parseFloat(s.min))) * 100;
   s.style.background = `linear-gradient(to right,#00d4c8 ${pct}%,#2e3350 ${pct}%)`;
 }
+const speedNormalVal = document.getElementById('speedNormalVal');
 function syncSummary() {
   const spd = parseFloat(speedSlider.value).toFixed(1);
   const amp = parseInt(ampSlider.value);
@@ -308,6 +385,7 @@ function syncSummary() {
   ampVal.textContent   = `${amp} dB`;
   durVal.textContent   = `${dur}s`;
   accordionTitle.textContent = `Advanced Settings (Speed: ${spd}x, Amplify: ${amp} dB, Max: ${dur}s)`;
+  speedNormalVal.textContent = (1 / parseFloat(spd)).toFixed(2);
 }
 [speedSlider, ampSlider, durSlider].forEach(s => {
   updateTrack(s);
@@ -401,6 +479,56 @@ function resample(inputData, speed) {
   return out;
 }
 
+// ── History ────────────────────────────────────────────────────────
+const historyList  = document.getElementById('historyList');
+const historyEmpty = document.getElementById('historyEmpty');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+function loadHistory() { return JSON.parse(localStorage.getItem('conv_history') || '[]'); }
+function saveHistory(h) { localStorage.setItem('conv_history', JSON.stringify(h)); }
+
+function renderHistory() {
+  const items = loadHistory();
+  historyList.querySelectorAll('.history-item').forEach(el => el.remove());
+  historyEmpty.style.display = items.length ? 'none' : 'block';
+  items.slice().reverse().forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `
+      <div class="history-thumb">🎵</div>
+      <div class="history-info">
+        <div class="history-name" title="${item.name}">${item.name}</div>
+        <div class="history-meta">${item.date}</div>
+        <div class="history-tags">
+          <span class="history-tag accent">${item.speed}x</span>
+          <span class="history-tag">${item.amp} dB</span>
+          <span class="history-tag">Max ${item.dur}s</span>
+          <span class="history-tag">${item.size}</span>
+        </div>
+      </div>
+      <a class="history-dl" href="${item.url}" download="${item.outName}">⬇ Unduh</a>
+    `;
+    historyList.appendChild(div);
+  });
+}
+
+function addHistory(entry) {
+  const h = loadHistory();
+  // Keep only last 20 entries; revoke old blobs for same name to avoid memory leak
+  h.push(entry);
+  if (h.length > 20) h.splice(0, h.length - 20);
+  saveHistory(h);
+  renderHistory();
+}
+
+clearHistoryBtn.addEventListener('click', () => {
+  loadHistory().forEach(item => { try { URL.revokeObjectURL(item.url); } catch(_){} });
+  localStorage.removeItem('conv_history');
+  renderHistory();
+});
+
+renderHistory();
+
 // ── Main convert ───────────────────────────────────────────────────
 convertBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
@@ -483,6 +611,21 @@ convertBtn.addEventListener('click', async () => {
     setProgress(100, 'Selesai!');
     setTimeout(hideProgress, 800);
     downloadSection.classList.add('show');
+
+    // Save to history
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) +
+                    ' ' + now.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
+    addHistory({
+      name: outName,
+      outName,
+      url: outputURL,
+      speed: parseFloat(speedSlider.value).toFixed(1),
+      amp: parseInt(ampSlider.value),
+      dur: parseInt(durSlider.value),
+      size: fmtBytes(oggBlob.size),
+      date: dateStr
+    });
 
   } catch(err) {
     hideProgress();
