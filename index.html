@@ -428,6 +428,7 @@ function renderHistory() {
           <span class="history-tag">${item.amp} dB</span>
           <span class="history-tag">Max ${item.dur}s</span>
           <span class="history-tag">${item.size}</span>
+          <span class="history-tag" title="Speed di game Roblox">🎮 ${item.speedNormal ?? (1/parseFloat(item.speed)).toFixed(2)}</span>
         </div>
       </div>
       <a class="history-dl" href="${item.url}" download="${item.outName}">⬇ Unduh</a>
@@ -545,6 +546,7 @@ convertBtn.addEventListener('click', async () => {
       outName,
       url: outputURL,
       speed: parseFloat(speedSlider.value).toFixed(1),
+      speedNormal: (1 / parseFloat(speedSlider.value)).toFixed(2),
       amp: parseInt(ampSlider.value),
       dur: parseInt(durSlider.value),
       size: fmtBytes(oggBlob.size),
