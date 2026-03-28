@@ -208,10 +208,10 @@
 
   <div class="tab-panel" id="tab-url">
     <div class="url-panel">
-      <p>Masukkan URL langsung ke file audio (MP3, WAV, dll).<br>
-      URL harus bisa diakses publik dan mengizinkan CORS.</p>
+      <p>Masukkan URL audio langsung atau link YouTube.<br>
+      YouTube akan dikonversi otomatis ke MP3 terlebih dahulu.</p>
       <div class="url-row">
-        <input type="url" class="url-input" id="urlInput" placeholder="https://example.com/audio.mp3" />
+        <input type="url" class="url-input" id="urlInput" placeholder="https://youtu.be/... atau https://example.com/audio.mp3" />
         <button class="btn-fetch" id="fetchBtn">Ambil</button>
       </div>
     </div>
@@ -458,7 +458,9 @@ async function fetchAudio(url) {
 fetchBtn.addEventListener('click', async () => {
   const url = urlInput.value.trim();
   if (!url) { showError('Masukkan URL terlebih dahulu.'); return; }
-  hideError(); fetchBtn.disabled = true; fetchBtn.textContent = 'Mengambil…';
+  hideError(); fetchBtn.disabled = true;
+  const isYT = url.includes('youtube.com') || url.includes('youtu.be');
+  fetchBtn.textContent = isYT ? 'Mengambil dari YouTube…' : 'Mengambil…';
   try {
     const res = await fetchAudio(url);
     const blob = await res.blob();
