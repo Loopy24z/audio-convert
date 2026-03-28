@@ -440,18 +440,32 @@ dropzone.addEventListener('drop', e => {
 fileRemove.addEventListener('click', clearFile);
 
 // ── URL fetch ──────────────────────────────────────────────────────
+const CORS_PROXY = 'https://audio-proxy.verifmlbb629.workers.dev/?url=';
+
+async function fetchAudio(url) {
+  // Try direct first
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res;
+  } catch(_) {}
+  // Fallback via CORS proxy
+  const res = await fetch(CORS_PROXY + encodeURIComponent(url));
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res;
+}
+
 fetchBtn.addEventListener('click', async () => {
   const url = urlInput.value.trim();
   if (!url) { showError('Masukkan URL terlebih dahulu.'); return; }
   hideError(); fetchBtn.disabled = true; fetchBtn.textContent = 'Mengambil…';
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const res = await fetchAudio(url);
     const blob = await res.blob();
     const name = url.split('/').pop().split('?')[0] || 'audio.mp3';
     setFile(new File([blob], name, {type: blob.type || 'audio/mpeg'}), name);
   } catch(e) {
-    showError('Gagal ambil URL: ' + e.message + '. Pastikan URL valid dan mengizinkan CORS.');
+    showError('Gagal ambil URL: ' + e.message + '. Pastikan URL valid dan dapat diakses publik.');
   } finally { fetchBtn.disabled = false; fetchBtn.textContent = 'Ambil'; }
 });
 
