@@ -27,6 +27,7 @@
 
     .card { width: 100%; max-width: 640px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 
+    /* Dropzone */
     .dropzone {
       margin: 20px; border: 2px dashed var(--border); border-radius: 10px;
       padding: 36px 20px; text-align: center; cursor: pointer; position: relative;
@@ -38,16 +39,17 @@
     .dropzone p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; }
     .dropzone p strong { color: var(--text); }
 
-    .file-info { display: none; margin: 0 20px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; gap: 10px; align-items: flex-start; flex-direction: column; }
-    .file-info.show { display: flex; }
-    .file-info-header { display: flex; align-items: center; gap: 10px; width: 100%; }
+    /* File info */
+    .file-info { display: none; margin: 0 20px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; }
+    .file-info.show { display: block; }
+    .file-info-header { display: flex; align-items: center; gap: 10px; }
     .file-info-icon { font-size: 1.4rem; flex-shrink: 0; }
     .file-info-name { font-weight: 600; word-break: break-all; flex: 1; }
+    .file-info-size { color: var(--text-muted); font-size: 0.78rem; }
     .file-remove { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
     .file-remove:hover { color: var(--danger); }
-    .file-list { width: 100%; display: flex; flex-direction: column; gap: 4px; }
-    .file-list-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 3px 0; border-bottom: 1px solid var(--border); }
-    .file-list-item:last-child { border-bottom: none; }
+    .file-list { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .file-list-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 3px 0; border-top: 1px solid var(--border); }
     .file-list-name { flex: 1; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .file-list-status { font-size: 0.72rem; white-space: nowrap; }
     .file-list-status.done { color: #4ade80; }
@@ -57,6 +59,7 @@
     .error-msg { display: none; margin: 0 20px 16px; background: rgba(255,79,109,0.1); border: 1px solid rgba(255,79,109,0.3); border-radius: 8px; padding: 12px 14px; font-size: 0.84rem; color: var(--danger); }
     .error-msg.show { display: block; }
 
+    /* Accordion */
     .accordion-header { display: flex; align-items: center; gap: 8px; padding: 14px 20px; cursor: pointer; background: var(--surface2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); user-select: none; }
     .accordion-header:hover { background: #262a3e; }
     .accordion-title { font-size: 0.9rem; font-weight: 600; flex: 1; }
@@ -65,18 +68,21 @@
     .accordion-body { padding: 20px; display: flex; flex-direction: column; gap: 22px; }
     .accordion-body.hidden { display: none; }
 
+    /* Sliders */
     .slider-row label { display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; font-weight: 500; margin-bottom: 10px; }
     .slider-row label span { color: var(--text-muted); font-size: 0.82rem; }
     input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 99px; outline: none; cursor: pointer; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--accent); cursor: pointer; }
     input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--accent); cursor: pointer; border: none; }
 
+    /* Progress */
     .progress-wrap { display: none; margin: 0 20px 16px; }
     .progress-wrap.show { display: block; }
     .progress-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
     .progress-bar-bg { height: 6px; border-radius: 99px; background: var(--border); overflow: hidden; }
     .progress-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), #a78bfa); width: 0%; transition: width 0.4s; }
 
+    /* Buttons */
     .btn-convert {
       display: block; width: calc(100% - 40px); margin: 0 20px 20px;
       padding: 16px; border: none; border-radius: 10px;
@@ -94,6 +100,7 @@
     .btn-download { display: inline-flex; align-items: center; gap: 8px; padding: 11px 28px; border: none; border-radius: 8px; background: var(--accent); color: #0f1117; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: none; }
     .btn-download:hover { background: var(--accent-dim); }
 
+    /* Speed Normal */
     .speed-normal-box {
       margin: 0 20px 16px; background: var(--surface2); border: 1px solid var(--border);
       border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;
@@ -111,6 +118,7 @@
       font-size: 0.76rem; width: 220px; line-height: 1.5; z-index: 10; color: var(--text); white-space: normal; pointer-events: none;
     }
 
+    /* History */
     .history-wrap { width: 100%; max-width: 640px; margin-top: 24px; }
     .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .history-header h2 { font-size: 1rem; font-weight: 700; }
@@ -213,14 +221,15 @@
 
 <footer>Semua proses berjalan 100% di browser — file tidak dikirim ke server apapun.</footer>
 
-<!-- libvorbis: pre-define Module so Emscripten uses our object directly -->
-<script>var Module = {};</script>
+<!-- libvorbis.js: OGG Vorbis encoder -->
+<script>var module={exports:{}};var exports=module.exports;</script>
 <script src="https://loopy24z.github.io/audio-convert/libvorbis.js"></script>
 <script>
-var _libvorbis = Module;
+var _libvorbis = module.exports;
 class VorbisEncoder {
   constructor(sampleRate, channels, quality) {
-    this.ch = channels; this.bufs = [];
+    this.ch = channels;
+    this.bufs = [];
     this.enc = _libvorbis._encoder_init(channels, sampleRate, quality);
     _libvorbis._encoder_stream_init(this.enc);
   }
@@ -250,7 +259,7 @@ class VorbisEncoder {
 
 <script>
 // ── State ──────────────────────────────────────────────────────────
-let selectedFiles = []; // array of File objects
+let selectedFiles = [];
 let outputURLs    = [];
 
 // ── Elements ───────────────────────────────────────────────────────
@@ -325,17 +334,15 @@ function setFiles(files) {
   revokeOutputs();
   downloadSection.classList.remove('show');
   if (selectedFiles.length === 0) { fileInfo.classList.remove('show'); convertBtn.disabled = true; return; }
-  if (selectedFiles.length === 1) {
-    fileName.textContent = selectedFiles[0].name + ' — ' + fmtBytes(selectedFiles[0].size);
-  } else {
-    fileName.textContent = selectedFiles.length + ' file dipilih';
-  }
+  fileName.textContent = selectedFiles.length === 1
+    ? selectedFiles[0].name + ' — ' + fmtBytes(selectedFiles[0].size)
+    : selectedFiles.length + ' file dipilih';
   fileListEl.innerHTML = '';
   if (selectedFiles.length > 1) {
     selectedFiles.forEach(f => {
       const row = document.createElement('div');
       row.className = 'file-list-item';
-      row.innerHTML = `<span class="file-list-name">${f.name}</span><span class="file-list-status" id="status-${f.name.replace(/\W/g,'_')}">${fmtBytes(f.size)}</span>`;
+      row.innerHTML = `<span class="file-list-name">${f.name}</span><span class="file-list-status" id="fstatus-${CSS.escape(f.name)}">${fmtBytes(f.size)}</span>`;
       fileListEl.appendChild(row);
     });
   }
@@ -427,7 +434,6 @@ async function convertFile(file, label) {
   const url = URL.createObjectURL(oggBlob);
   outputURLs.push(url);
 
-  // Save history
   const now = new Date();
   const dateStr = now.toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) +
                   ' ' + now.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
@@ -435,7 +441,7 @@ async function convertFile(file, label) {
     speedNormal: (1/speed).toFixed(2), amp: ampDb, dur: maxDur,
     size: fmtBytes(oggBlob.size), date: dateStr });
 
-  return { url, outName, size: fmtBytes(oggBlob.size) };
+  return { url, outName };
 }
 
 // ── Main convert handler ───────────────────────────────────────────
@@ -451,17 +457,14 @@ convertBtn.addEventListener('click', async () => {
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
       const label = total > 1 ? `${i+1}/${total}` : file.name;
-
-      // Update per-file status in file list
-      const statusEl = document.getElementById('status-' + file.name.replace(/\W/g,'_'));
-      if (statusEl) { statusEl.textContent = '⚙️ Memproses…'; statusEl.className = 'file-list-status run'; }
-
+      const statusEl = document.getElementById('fstatus-' + CSS.escape(file.name));
+      if (statusEl) { statusEl.textContent = '⚙️'; statusEl.className = 'file-list-status run'; }
       try {
         const result = await convertFile(file, label);
         results.push(result);
-        if (statusEl) { statusEl.textContent = '✅ Selesai'; statusEl.className = 'file-list-status done'; }
+        if (statusEl) { statusEl.textContent = '✅'; statusEl.className = 'file-list-status done'; }
       } catch(err) {
-        if (statusEl) { statusEl.textContent = '❌ Gagal'; statusEl.className = 'file-list-status err'; }
+        if (statusEl) { statusEl.textContent = '❌'; statusEl.className = 'file-list-status err'; }
         showError('Gagal: ' + (err.message || err));
       }
     }
@@ -476,7 +479,7 @@ convertBtn.addEventListener('click', async () => {
       results.forEach(r => {
         const a = document.createElement('a');
         a.className = 'btn-download'; a.href = r.url; a.download = r.outName;
-        a.innerHTML = `⬇ ${r.outName}`;
+        a.textContent = '⬇ ' + r.outName;
         downloadLinks.appendChild(a);
       });
       downloadSection.classList.add('show');
