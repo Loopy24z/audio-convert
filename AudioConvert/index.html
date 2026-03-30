@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; worker-src blob:; connect-src 'self';">
   <title>Audio Converter — MP3 ke OGG</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,7 +27,6 @@
 
     .card { width: 100%; max-width: 640px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 
-    /* Dropzone */
     .dropzone {
       margin: 20px; border: 2px dashed var(--border); border-radius: 10px;
       padding: 36px 20px; text-align: center; cursor: pointer; position: relative;
@@ -40,37 +38,25 @@
     .dropzone p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; }
     .dropzone p strong { color: var(--text); }
 
-    /* File Queue */
-    .queue-wrap { display: none; margin: 0 20px 16px; }
-    .queue-wrap.show { display: block; }
-    .queue-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 0.82rem; color: var(--text-muted); }
-    .queue-header button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.78rem; padding: 2px 6px; border-radius: 4px; }
-    .queue-header button:hover { color: var(--danger); }
-    .queue-list { display: flex; flex-direction: column; gap: 6px; }
-    .queue-item {
-      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
-      padding: 9px 12px; display: flex; align-items: center; gap: 10px; font-size: 0.83rem;
-    }
-    .queue-item.converting { border-color: rgba(0,212,200,0.4); }
-    .queue-item.done { border-color: rgba(0,212,200,0.25); }
-    .queue-item.error { border-color: rgba(255,79,109,0.35); }
-    .qi-name { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .qi-size { color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; }
-    .qi-status { font-size: 0.75rem; white-space: nowrap; }
-    .qi-status.wait  { color: var(--text-muted); }
-    .qi-status.run   { color: var(--accent); }
-    .qi-status.ok    { color: #4ade80; }
-    .qi-status.err   { color: var(--danger); }
-    .qi-dl { font-size: 0.75rem; padding: 4px 10px; border: none; border-radius: 6px; background: rgba(0,212,200,0.12); color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; display: none; }
-    .qi-dl.show { display: inline-block; }
-    .qi-dl:hover { background: rgba(0,212,200,0.22); }
-    .qi-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 2px 5px; border-radius: 4px; flex-shrink: 0; }
-    .qi-remove:hover { color: var(--danger); }
+    .file-info { display: none; margin: 0 20px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; gap: 10px; align-items: flex-start; flex-direction: column; }
+    .file-info.show { display: flex; }
+    .file-info-header { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .file-info-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .file-info-name { font-weight: 600; word-break: break-all; flex: 1; }
+    .file-remove { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
+    .file-remove:hover { color: var(--danger); }
+    .file-list { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+    .file-list-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 3px 0; border-bottom: 1px solid var(--border); }
+    .file-list-item:last-child { border-bottom: none; }
+    .file-list-name { flex: 1; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-list-status { font-size: 0.72rem; white-space: nowrap; }
+    .file-list-status.done { color: #4ade80; }
+    .file-list-status.run  { color: var(--accent); }
+    .file-list-status.err  { color: var(--danger); }
 
     .error-msg { display: none; margin: 0 20px 16px; background: rgba(255,79,109,0.1); border: 1px solid rgba(255,79,109,0.3); border-radius: 8px; padding: 12px 14px; font-size: 0.84rem; color: var(--danger); }
     .error-msg.show { display: block; }
 
-    /* Accordion */
     .accordion-header { display: flex; align-items: center; gap: 8px; padding: 14px 20px; cursor: pointer; background: var(--surface2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); user-select: none; }
     .accordion-header:hover { background: #262a3e; }
     .accordion-title { font-size: 0.9rem; font-weight: 600; flex: 1; }
@@ -79,21 +65,18 @@
     .accordion-body { padding: 20px; display: flex; flex-direction: column; gap: 22px; }
     .accordion-body.hidden { display: none; }
 
-    /* Sliders */
     .slider-row label { display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; font-weight: 500; margin-bottom: 10px; }
     .slider-row label span { color: var(--text-muted); font-size: 0.82rem; }
     input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 99px; outline: none; cursor: pointer; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--accent); cursor: pointer; }
     input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--accent); cursor: pointer; border: none; }
 
-    /* Progress */
     .progress-wrap { display: none; margin: 0 20px 16px; }
     .progress-wrap.show { display: block; }
     .progress-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
     .progress-bar-bg { height: 6px; border-radius: 99px; background: var(--border); overflow: hidden; }
     .progress-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), #a78bfa); width: 0%; transition: width 0.4s; }
 
-    /* Buttons */
     .btn-convert {
       display: block; width: calc(100% - 40px); margin: 0 20px 20px;
       padding: 16px; border: none; border-radius: 10px;
@@ -104,61 +87,45 @@
     .btn-convert:active:not(:disabled) { transform: scale(0.98); }
     .btn-convert:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    /* Speed Normal */
+    .download-section { display: none; margin: 0 20px 20px; background: rgba(0,212,200,0.08); border: 1px solid rgba(0,212,200,0.3); border-radius: 10px; padding: 16px; text-align: center; }
+    .download-section.show { display: block; }
+    .download-section p { font-size: 0.85rem; color: var(--accent); margin-bottom: 12px; font-weight: 600; }
+    .download-links { display: flex; flex-direction: column; gap: 8px; }
+    .btn-download { display: inline-flex; align-items: center; gap: 8px; padding: 11px 28px; border: none; border-radius: 8px; background: var(--accent); color: #0f1117; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: none; }
+    .btn-download:hover { background: var(--accent-dim); }
+
     .speed-normal-box {
       margin: 0 20px 16px; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 8px;
-      font-size: 0.85rem;
+      border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;
     }
     .speed-normal-label { color: var(--text-muted); }
     .speed-normal-val { color: var(--accent); font-weight: 700; font-size: 1rem; }
     .speed-normal-info {
       margin-left: auto; width: 18px; height: 18px; border-radius: 50%;
       background: var(--border); color: var(--text-muted); font-size: 0.7rem;
-      display: flex; align-items: center; justify-content: center; cursor: help;
-      position: relative; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; cursor: help; position: relative; flex-shrink: 0;
     }
     .speed-normal-info:hover::after {
-      content: attr(data-tip);
-      position: absolute; right: 0; top: 24px; background: #1e2235;
+      content: attr(data-tip); position: absolute; right: 0; top: 24px; background: #1e2235;
       border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
-      font-size: 0.76rem; width: 220px; line-height: 1.5; z-index: 10;
-      color: var(--text); white-space: normal; pointer-events: none;
+      font-size: 0.76rem; width: 220px; line-height: 1.5; z-index: 10; color: var(--text); white-space: normal; pointer-events: none;
     }
 
-    /* History */
     .history-wrap { width: 100%; max-width: 640px; margin-top: 24px; }
-    .history-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 12px;
-    }
+    .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .history-header h2 { font-size: 1rem; font-weight: 700; }
-    .btn-clear-history {
-      font-size: 0.78rem; color: var(--text-muted); background: none; border: none;
-      cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: color 0.15s;
-    }
+    .btn-clear-history { font-size: 0.78rem; color: var(--text-muted); background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: color 0.15s; }
     .btn-clear-history:hover { color: var(--danger); }
     .history-list { display: flex; flex-direction: column; gap: 10px; }
-    .history-item {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-      padding: 12px 16px; display: flex; align-items: center; gap: 12px;
-    }
+    .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
     .history-thumb { font-size: 1.8rem; flex-shrink: 0; }
     .history-info { flex: 1; min-width: 0; }
     .history-name { font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .history-meta { font-size: 0.76rem; color: var(--text-muted); margin-top: 3px; }
     .history-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-    .history-tag {
-      font-size: 0.72rem; padding: 2px 8px; border-radius: 99px;
-      background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
-    }
+    .history-tag { font-size: 0.72rem; padding: 2px 8px; border-radius: 99px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); }
     .history-tag.accent { color: var(--accent); border-color: rgba(0,212,200,0.3); }
-    .history-dl {
-      font-size: 0.8rem; padding: 7px 14px; border: none; border-radius: 7px;
-      background: rgba(0,212,200,0.12); color: var(--accent); font-weight: 600;
-      cursor: pointer; text-decoration: none; white-space: nowrap; flex-shrink: 0;
-      transition: background 0.2s;
-    }
+    .history-dl { font-size: 0.8rem; padding: 7px 14px; border: none; border-radius: 7px; background: rgba(0,212,200,0.12); color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: background 0.2s; }
     .history-dl:hover { background: rgba(0,212,200,0.22); }
     .history-empty { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px; }
 
@@ -180,13 +147,13 @@
     <p><strong>Klik atau seret file audio ke sini</strong><br>MP3, WAV, OGG, M4A, AAC, FLAC · Bisa pilih banyak sekaligus</p>
   </div>
 
-  <!-- File Queue -->
-  <div class="queue-wrap" id="queueWrap">
-    <div class="queue-header">
-      <span id="queueCountLabel">0 file dipilih</span>
-      <button onclick="clearQueue()">Hapus Semua</button>
+  <div class="file-info" id="fileInfo">
+    <div class="file-info-header">
+      <span class="file-info-icon">🎵</span>
+      <div class="file-info-name" id="fileName"></div>
+      <button class="file-remove" id="fileRemove">✕</button>
     </div>
-    <div class="queue-list" id="queueList"></div>
+    <div class="file-list" id="fileList"></div>
   </div>
 
   <div class="error-msg" id="errorMsg"></div>
@@ -212,8 +179,7 @@
     </div>
   </div>
 
-  <!-- Speed Normal indicator -->
-  <div class="speed-normal-box" id="speedNormalBox">
+  <div class="speed-normal-box">
     <span class="speed-normal-label">Speed Normal (di game):</span>
     <span class="speed-normal-val" id="speedNormalVal">0.43</span>
     <span class="speed-normal-info" data-tip="Roblox memutar audio dengan kecepatan normal (1.0). Jika kamu upload audio yang sudah dipercepat 2.3x, di game audio akan terdengar dengan kecepatan 1/2.3 ≈ 0.43 — mendekati normal.">?</span>
@@ -227,11 +193,15 @@
     <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
   </div>
 
+  <div class="download-section" id="downloadSection">
+    <p id="downloadMsg">✅ Konversi selesai! File siap diunduh.</p>
+    <div class="download-links" id="downloadLinks"></div>
+  </div>
+
   <button class="btn-convert" id="convertBtn" disabled>Konversi Audio</button>
 </div>
 
-<!-- History Section -->
-<div class="history-wrap" id="historyWrap">
+<div class="history-wrap">
   <div class="history-header">
     <h2>📋 Riwayat Konversi</h2>
     <button class="btn-clear-history" id="clearHistoryBtn">Hapus Semua</button>
@@ -243,13 +213,14 @@
 
 <footer>Semua proses berjalan 100% di browser — file tidak dikirim ke server apapun.</footer>
 
+<!-- libvorbis: loaded same way as original working version -->
 <script>var module={exports:{}};var exports=module.exports;</script>
-<script src="./libvorbis.js"></script>
+<script src="/libvorbis.js"></script>
 <script>
 var _libvorbis = module.exports;
 class VorbisEncoder {
   constructor(sampleRate, channels, quality) {
-    this.ch = channels; this.bufs = []; this.lib = _libvorbis;
+    this.ch = channels; this.bufs = [];
     this.enc = _libvorbis._encoder_init(channels, sampleRate, quality);
     _libvorbis._encoder_stream_init(this.enc);
   }
@@ -279,21 +250,21 @@ class VorbisEncoder {
 
 <script>
 // ── State ──────────────────────────────────────────────────────────
-// Each entry: { file, name, size, status: 'wait'|'run'|'done'|'error', url, outName, el }
-let fileQueue = [];
-let isConverting = false;
+let selectedFiles = []; // array of File objects
+let outputURLs    = [];
 
 // ── Elements ───────────────────────────────────────────────────────
 const dropzone      = document.getElementById('dropzone');
 const fileInput     = document.getElementById('fileInput');
-const queueWrap     = document.getElementById('queueWrap');
-const queueList     = document.getElementById('queueList');
-const queueCountLabel = document.getElementById('queueCountLabel');
+const fileInfo      = document.getElementById('fileInfo');
+const fileName      = document.getElementById('fileName');
+const fileListEl    = document.getElementById('fileList');
+const fileRemove    = document.getElementById('fileRemove');
 const errorMsg      = document.getElementById('errorMsg');
-const accordionHeader = document.getElementById('accordionHeader');
-const accordionTitle  = document.getElementById('accordionTitle');
-const accordionChevron= document.getElementById('accordionChevron');
-const accordionBody   = document.getElementById('accordionBody');
+const accordionHeader  = document.getElementById('accordionHeader');
+const accordionTitle   = document.getElementById('accordionTitle');
+const accordionChevron = document.getElementById('accordionChevron');
+const accordionBody    = document.getElementById('accordionBody');
 const speedSlider   = document.getElementById('speedSlider');
 const speedVal      = document.getElementById('speedVal');
 const ampSlider     = document.getElementById('ampSlider');
@@ -304,8 +275,11 @@ const progressWrap  = document.getElementById('progressWrap');
 const progressLabel = document.getElementById('progressLabel');
 const progressPct   = document.getElementById('progressPct');
 const progressFill  = document.getElementById('progressFill');
-const convertBtn    = document.getElementById('convertBtn');
-const speedNormalVal = document.getElementById('speedNormalVal');
+const downloadSection = document.getElementById('downloadSection');
+const downloadLinks   = document.getElementById('downloadLinks');
+const downloadMsg     = document.getElementById('downloadMsg');
+const convertBtn      = document.getElementById('convertBtn');
+const speedNormalVal  = document.getElementById('speedNormalVal');
 
 // ── Sliders ────────────────────────────────────────────────────────
 function updateTrack(s) {
@@ -343,66 +317,51 @@ function fmtBytes(b) {
 }
 function showError(m) { errorMsg.textContent = m; errorMsg.classList.add('show'); }
 function hideError()  { errorMsg.classList.remove('show'); }
+function revokeOutputs() { outputURLs.forEach(u => { try { URL.revokeObjectURL(u); } catch(_){} }); outputURLs = []; }
 
-// ── Queue ──────────────────────────────────────────────────────────
-function addFiles(fileList) {
+function setFiles(files) {
+  selectedFiles = Array.from(files);
   hideError();
-  for (const file of fileList) {
-    if (!file.type.startsWith('audio/') && !/\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(file.name)) continue;
-    const entry = { file, name: file.name, size: file.size, status: 'wait', url: null, outName: null, el: null };
-    fileQueue.push(entry);
+  revokeOutputs();
+  downloadSection.classList.remove('show');
+  if (selectedFiles.length === 0) { fileInfo.classList.remove('show'); convertBtn.disabled = true; return; }
+  if (selectedFiles.length === 1) {
+    fileName.textContent = selectedFiles[0].name + ' — ' + fmtBytes(selectedFiles[0].size);
+  } else {
+    fileName.textContent = selectedFiles.length + ' file dipilih';
   }
-  renderQueue();
+  fileListEl.innerHTML = '';
+  if (selectedFiles.length > 1) {
+    selectedFiles.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'file-list-item';
+      row.innerHTML = `<span class="file-list-name">${f.name}</span><span class="file-list-status" id="status-${f.name.replace(/\W/g,'_')}">${fmtBytes(f.size)}</span>`;
+      fileListEl.appendChild(row);
+    });
+  }
+  fileInfo.classList.add('show');
+  convertBtn.disabled = false;
+  convertBtn.textContent = selectedFiles.length > 1 ? `Konversi ${selectedFiles.length} File` : 'Konversi Audio';
 }
 
-function removeQueueItem(idx) {
-  if (fileQueue[idx].url) URL.revokeObjectURL(fileQueue[idx].url);
-  fileQueue.splice(idx, 1);
-  renderQueue();
+function clearFiles() {
+  selectedFiles = []; fileInput.value = '';
+  fileInfo.classList.remove('show');
+  downloadSection.classList.remove('show');
+  convertBtn.disabled = true;
+  convertBtn.textContent = 'Konversi Audio';
+  hideError(); revokeOutputs();
 }
 
-function clearQueue() {
-  fileQueue.forEach(e => { if (e.url) URL.revokeObjectURL(e.url); });
-  fileQueue = [];
-  fileInput.value = '';
-  renderQueue();
-  hideError();
-}
-
-function renderQueue() {
-  queueList.innerHTML = '';
-  fileQueue.forEach((entry, idx) => {
-    const div = document.createElement('div');
-    div.className = 'queue-item' + (entry.status === 'run' ? ' converting' : entry.status === 'done' ? ' done' : entry.status === 'error' ? ' error' : '');
-    const statusText = { wait: '⏳ Menunggu', run: '⚙️ Memproses…', done: '✅ Selesai', error: '❌ Gagal' }[entry.status];
-    const statusClass = { wait: 'wait', run: 'run', done: 'ok', error: 'err' }[entry.status];
-    div.innerHTML = `
-      <span class="qi-name" title="${entry.name}">${entry.name}</span>
-      <span class="qi-size">${fmtBytes(entry.size)}</span>
-      <span class="qi-status ${statusClass}">${statusText}</span>
-      ${entry.status === 'done' ? `<a class="qi-dl show" href="${entry.url}" download="${entry.outName}">⬇ Unduh</a>` : '<a class="qi-dl"></a>'}
-      ${entry.status !== 'run' ? `<button class="qi-remove" onclick="removeQueueItem(${idx})">✕</button>` : '<span style="width:20px"></span>'}
-    `;
-    entry.el = div;
-    queueList.appendChild(div);
-  });
-
-  const total = fileQueue.length;
-  queueWrap.classList.toggle('show', total > 0);
-  queueCountLabel.textContent = `${total} file dipilih`;
-  const waiting = fileQueue.filter(e => e.status === 'wait').length;
-  convertBtn.disabled = waiting === 0 || isConverting;
-  convertBtn.textContent = waiting > 1 ? `Konversi ${waiting} File` : 'Konversi Audio';
-}
-
-// ── File upload events ─────────────────────────────────────────────
-fileInput.addEventListener('change', () => { if (fileInput.files.length) addFiles(fileInput.files); });
+// ── Upload events ──────────────────────────────────────────────────
+fileInput.addEventListener('change', () => { if (fileInput.files.length) setFiles(fileInput.files); });
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
 dropzone.addEventListener('drop', e => {
   e.preventDefault(); dropzone.classList.remove('drag-over');
-  if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+  if (e.dataTransfer.files.length) setFiles(e.dataTransfer.files);
 });
+fileRemove.addEventListener('click', clearFiles);
 
 // ── Progress ───────────────────────────────────────────────────────
 function setProgress(pct, label) {
@@ -420,43 +379,33 @@ function resample(inputData, speed) {
   const out = new Float32Array(outLen);
   for (let i = 0; i < outLen; i++) {
     const src = i * speed;
-    const lo = Math.floor(src);
-    const hi = Math.min(lo + 1, inputData.length - 1);
-    const t  = src - lo;
-    out[i] = inputData[lo] * (1 - t) + inputData[hi] * t;
+    const lo = Math.floor(src); const hi = Math.min(lo + 1, inputData.length - 1);
+    out[i] = inputData[lo] * (1 - (src - lo)) + inputData[hi] * (src - lo);
   }
   return out;
 }
 
-// ── Convert single file ────────────────────────────────────────────
-async function convertOne(entry, label) {
-  entry.status = 'run';
-  renderQueue();
-
-  const speed   = parseFloat(speedSlider.value);
-  const ampDb   = parseInt(ampSlider.value);
-  const maxDur  = parseInt(durSlider.value);
+// ── Convert one file ───────────────────────────────────────────────
+async function convertFile(file, label) {
+  const speed  = parseFloat(speedSlider.value);
+  const ampDb  = parseInt(ampSlider.value);
+  const maxDur = parseInt(durSlider.value);
 
   setProgress(5, `[${label}] Membaca file…`);
-  const arrayBuffer = await entry.file.arrayBuffer();
+  const arrayBuffer = await file.arrayBuffer();
   setProgress(15, `[${label}] Mendekode audio…`);
 
   const audioCtx = new AudioContext();
   let audioBuffer;
-  try {
-    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-  } catch(e) {
-    throw new Error('Format tidak didukung browser: ' + entry.name);
-  }
+  try { audioBuffer = await audioCtx.decodeAudioData(arrayBuffer); }
+  catch(e) { throw new Error('Format tidak didukung: ' + file.name); }
   await audioCtx.close();
 
   setProgress(30, `[${label}] Menerapkan efek…`);
-
   const channels    = Math.min(audioBuffer.numberOfChannels, 2);
   const sampleRate  = audioBuffer.sampleRate;
   const inputSamples = Math.min(audioBuffer.length, Math.round(maxDur * sampleRate));
   const gain = Math.pow(10, ampDb / 20);
-
   const channelArrays = [];
   for (let c = 0; c < channels; c++) {
     const raw = audioBuffer.getChannelData(c).slice(0, inputSamples);
@@ -469,63 +418,77 @@ async function convertOne(entry, label) {
   const chunkSize = sampleRate;
   const totalSamples = channelArrays[0].length;
   for (let i = 0; i < totalSamples; i += chunkSize) {
-    const chunk = channelArrays.map(ch => ch.slice(i, i + chunkSize));
-    encoder.encode(chunk);
-    const pct = 60 + Math.round((i / totalSamples) * 35);
-    setProgress(pct, `[${label}] Encoding ke OGG…`);
+    encoder.encode(channelArrays.map(ch => ch.slice(i, i + chunkSize)));
+    setProgress(60 + Math.round((i / totalSamples) * 35), `[${label}] Encoding ke OGG…`);
     await new Promise(r => setTimeout(r, 0));
   }
   const oggBlob = encoder.finish();
-  const outName = entry.name.replace(/\.\w+$/, '.ogg');
+  const outName = file.name.replace(/\.\w+$/, '.ogg');
   const url = URL.createObjectURL(oggBlob);
+  outputURLs.push(url);
 
-  entry.status = 'done';
-  entry.url = url;
-  entry.outName = outName;
-  renderQueue();
-
-  // Save to history
+  // Save history
   const now = new Date();
   const dateStr = now.toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) +
                   ' ' + now.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
-  addHistory({
-    name: outName, outName, url,
-    speed: speed.toFixed(1), speedNormal: (1/speed).toFixed(2),
-    amp: ampDb, dur: maxDur,
-    size: fmtBytes(oggBlob.size), date: dateStr
-  });
+  addHistory({ name: outName, outName, url, speed: speed.toFixed(1),
+    speedNormal: (1/speed).toFixed(2), amp: ampDb, dur: maxDur,
+    size: fmtBytes(oggBlob.size), date: dateStr });
+
+  return { url, outName, size: fmtBytes(oggBlob.size) };
 }
 
-// ── Convert all ────────────────────────────────────────────────────
+// ── Main convert handler ───────────────────────────────────────────
 convertBtn.addEventListener('click', async () => {
-  const pending = fileQueue.filter(e => e.status === 'wait');
-  if (!pending.length || isConverting) return;
-  hideError();
-  isConverting = true;
+  if (!selectedFiles.length) return;
+  hideError(); revokeOutputs();
+  downloadSection.classList.remove('show');
   convertBtn.disabled = true;
+  const total = selectedFiles.length;
+  const results = [];
 
-  const total = pending.length;
-  let done = 0;
-  for (const entry of pending) {
-    done++;
-    try {
-      await convertOne(entry, `${done}/${total}`);
-    } catch(err) {
-      entry.status = 'error';
-      renderQueue();
-      showError(`Gagal: ${err.message || err}`);
+  try {
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      const label = total > 1 ? `${i+1}/${total}` : file.name;
+
+      // Update per-file status in file list
+      const statusEl = document.getElementById('status-' + file.name.replace(/\W/g,'_'));
+      if (statusEl) { statusEl.textContent = '⚙️ Memproses…'; statusEl.className = 'file-list-status run'; }
+
+      try {
+        const result = await convertFile(file, label);
+        results.push(result);
+        if (statusEl) { statusEl.textContent = '✅ Selesai'; statusEl.className = 'file-list-status done'; }
+      } catch(err) {
+        if (statusEl) { statusEl.textContent = '❌ Gagal'; statusEl.className = 'file-list-status err'; }
+        showError('Gagal: ' + (err.message || err));
+      }
     }
-  }
 
-  setProgress(100, 'Semua selesai!');
-  setTimeout(hideProgress, 1000);
-  isConverting = false;
-  renderQueue();
+    if (results.length > 0) {
+      setProgress(100, 'Selesai!');
+      setTimeout(hideProgress, 800);
+      downloadMsg.textContent = results.length === 1
+        ? '✅ Konversi selesai! File siap diunduh.'
+        : `✅ ${results.length} file selesai dikonversi!`;
+      downloadLinks.innerHTML = '';
+      results.forEach(r => {
+        const a = document.createElement('a');
+        a.className = 'btn-download'; a.href = r.url; a.download = r.outName;
+        a.innerHTML = `⬇ ${r.outName}`;
+        downloadLinks.appendChild(a);
+      });
+      downloadSection.classList.add('show');
+    }
+  } finally {
+    convertBtn.disabled = false;
+  }
 });
 
 // ── History ────────────────────────────────────────────────────────
-const historyList  = document.getElementById('historyList');
-const historyEmpty = document.getElementById('historyEmpty');
+const historyList     = document.getElementById('historyList');
+const historyEmpty    = document.getElementById('historyEmpty');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
 function loadHistory() { return JSON.parse(localStorage.getItem('conv_history') || '[]'); }
@@ -561,14 +524,12 @@ function addHistory(entry) {
   const h = loadHistory();
   h.push(entry);
   if (h.length > 20) h.splice(0, h.length - 20);
-  saveHistory(h);
-  renderHistory();
+  saveHistory(h); renderHistory();
 }
 
 clearHistoryBtn.addEventListener('click', () => {
   loadHistory().forEach(item => { try { URL.revokeObjectURL(item.url); } catch(_){} });
-  localStorage.removeItem('conv_history');
-  renderHistory();
+  localStorage.removeItem('conv_history'); renderHistory();
 });
 
 renderHistory();
