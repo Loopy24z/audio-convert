@@ -213,11 +213,11 @@
 
 <footer>Semua proses berjalan 100% di browser — file tidak dikirim ke server apapun.</footer>
 
-<!-- libvorbis: loaded same way as original working version -->
-<script>var module={exports:{}};var exports=module.exports;</script>
+<!-- libvorbis: pre-define Module so Emscripten uses our object directly -->
+<script>var Module = {};</script>
 <script src="https://loopy24z.github.io/audio-convert/libvorbis.js"></script>
 <script>
-var _libvorbis = module.exports;
+var _libvorbis = Module;
 class VorbisEncoder {
   constructor(sampleRate, channels, quality) {
     this.ch = channels; this.bufs = [];
