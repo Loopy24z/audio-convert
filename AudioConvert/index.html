@@ -242,10 +242,10 @@
 
 <footer>Semua proses berjalan 100% di browser — file tidak dikirim ke server apapun.</footer>
 
-<script>var Module = {};</script>
+<script>var module={exports:{}};var exports=module.exports;</script>
 <script src="./libvorbis.js"></script>
 <script>
-var _libvorbis = Module;
+var _libvorbis = module.exports;
 class VorbisEncoder {
   constructor(sampleRate, channels, quality) {
     this.ch = channels; this.bufs = []; this.lib = _libvorbis;
