@@ -152,6 +152,13 @@
     .history-empty { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px; }
 
     footer { margin-top: 40px; font-size: 0.78rem; color: var(--text-muted); text-align: center; }
+    #fileList { display:flex; flex-direction:column; gap:3px; margin-top:8px; }
+    .fli { display:flex; align-items:center; gap:8px; font-size:0.8rem; padding:3px 0; border-top:1px solid var(--border); }
+    .fli-name { flex:1; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .fli-st { font-size:0.72rem; white-space:nowrap; }
+    .fli-st.done { color:#4ade80; }
+    .fli-st.run  { color:var(--accent); }
+    .fli-st.err  { color:var(--danger); }
   </style>
 </head>
 <body>
@@ -164,18 +171,21 @@
 <div class="card">
 
   <div class="dropzone" id="dropzone">
-    <input type="file" id="fileInput" accept=".mp3,.wav,.ogg,.m4a,.aac,.flac,audio/*" />
+    <input type="file" id="fileInput" accept=".mp3,.wav,.ogg,.m4a,.aac,.flac,audio/*" multiple />
     <span class="dropzone-icon">📂</span>
-    <p><strong>Klik atau seret file audio ke sini</strong><br>MP3, WAV, OGG, M4A, AAC, FLAC</p>
+    <p><strong>Klik atau seret file audio ke sini</strong><br>MP3, WAV, OGG, M4A, AAC, FLAC · Bisa pilih banyak sekaligus</p>
   </div>
 
   <div class="file-info" id="fileInfo">
-    <span class="file-info-icon">🎵</span>
-    <div>
-      <div class="file-info-name" id="fileName"></div>
-      <div class="file-info-size" id="fileSize"></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="file-info-icon">🎵</span>
+      <div>
+        <div class="file-info-name" id="fileName"></div>
+        <div class="file-info-size" id="fileSize"></div>
+      </div>
+      <button class="file-remove" id="fileRemove" style="margin-left:auto">✕</button>
     </div>
-    <button class="file-remove" id="fileRemove">✕</button>
+    <div id="fileList"></div>
   </div>
 
   <div class="error-msg" id="errorMsg"></div>
@@ -221,8 +231,8 @@
   </div>
 
   <div class="download-section" id="downloadSection">
-    <p>✅ Konversi selesai! File siap diunduh.</p>
-    <a class="btn-download" id="downloadBtn" href="#" download>⬇ Unduh OGG</a>
+    <p id="downloadMsg">✅ Konversi selesai! File siap diunduh.</p>
+    <div id="downloadLinks" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
 
   <button class="btn-convert" id="convertBtn" disabled>Konversi Audio</button>
@@ -243,7 +253,7 @@
 
 <!-- libvorbis.js: OGG Vorbis encoder (self-hosted, no Worker needed) -->
 <script>var module={exports:{}};var exports=module.exports;</script>
-<script src="/libvorbis.js"></script>
+<script src="./libvorbis.js"></script>
 <script>
 var _libvorbis = module.exports;
 // Browser wrapper for vorbis encoder
@@ -281,8 +291,8 @@ class VorbisEncoder {
 
 <script>
 // ── State ──────────────────────────────────────────────────────────
-let selectedFile = null;
-let outputURL = null;
+let selectedFiles = [];
+let outputURLs    = [];
 
 // ── Elements ───────────────────────────────────────────────────────
 const dropzone    = document.getElementById('dropzone');
@@ -290,6 +300,7 @@ const fileInput   = document.getElementById('fileInput');
 const fileInfo    = document.getElementById('fileInfo');
 const fileName    = document.getElementById('fileName');
 const fileSize    = document.getElementById('fileSize');
+const fileListEl  = document.getElementById('fileList');
 const fileRemove  = document.getElementById('fileRemove');
 const errorMsg    = document.getElementById('errorMsg');
 const accordionHeader = document.getElementById('accordionHeader');
@@ -308,7 +319,8 @@ const progressLabel = document.getElementById('progressLabel');
 const progressPct   = document.getElementById('progressPct');
 const progressFill  = document.getElementById('progressFill');
 const downloadSection = document.getElementById('downloadSection');
-const downloadBtn     = document.getElementById('downloadBtn');
+const downloadMsg     = document.getElementById('downloadMsg');
+const downloadLinks   = document.getElementById('downloadLinks');
 const convertBtn      = document.getElementById('convertBtn');
 
 // ── Sliders ────────────────────────────────────────────────────────
@@ -349,35 +361,41 @@ function fmtBytes(b) {
 }
 function showError(m) { errorMsg.textContent = m; errorMsg.classList.add('show'); }
 function hideError()  { errorMsg.classList.remove('show'); }
-function revokeOut()  { if (outputURL) { URL.revokeObjectURL(outputURL); outputURL = null; } }
+function revokeOutputs() { outputURLs.forEach(u=>{try{URL.revokeObjectURL(u);}catch(_){}});outputURLs=[]; }
 
-function setFile(file, name) {
-  selectedFile = file;
-  hideError();
-  revokeOut();
+function setFiles(files) {
+  selectedFiles = Array.from(files);
+  hideError(); revokeOutputs();
   downloadSection.classList.remove('show');
-  fileName.textContent = name || file.name;
-  fileSize.textContent = fmtBytes(file.size);
+  if (!selectedFiles.length) { fileInfo.classList.remove('show'); convertBtn.disabled=true; return; }
+  fileName.textContent = selectedFiles.length===1 ? selectedFiles[0].name : selectedFiles.length+' file dipilih';
+  fileSize.textContent = selectedFiles.length===1 ? fmtBytes(selectedFiles[0].size) : '';
+  fileListEl.innerHTML = '';
+  if (selectedFiles.length>1) selectedFiles.forEach(f=>{
+    const d=document.createElement('div'); d.className='fli';
+    d.innerHTML=`<span class="fli-name">${f.name}</span><span class="fli-st" id="fst-${f.name.replace(/\W/g,'_')}">${fmtBytes(f.size)}</span>`;
+    fileListEl.appendChild(d);
+  });
   fileInfo.classList.add('show');
-  convertBtn.disabled = false;
+  convertBtn.disabled=false;
+  convertBtn.textContent=selectedFiles.length>1?`Konversi ${selectedFiles.length} File`:'Konversi Audio';
 }
-function clearFile() {
-  selectedFile = null; fileInput.value = '';
-  fileInfo.classList.remove('show');
-  downloadSection.classList.remove('show');
-  convertBtn.disabled = true;
-  hideError(); revokeOut();
+function clearFiles() {
+  selectedFiles=[]; fileInput.value='';
+  fileInfo.classList.remove('show'); downloadSection.classList.remove('show');
+  convertBtn.disabled=true; convertBtn.textContent='Konversi Audio';
+  hideError(); revokeOutputs();
 }
 
 // ── File upload ────────────────────────────────────────────────────
-fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+fileInput.addEventListener('change', () => { if (fileInput.files.length) setFiles(fileInput.files); });
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
 dropzone.addEventListener('drop', e => {
   e.preventDefault(); dropzone.classList.remove('drag-over');
-  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  if (e.dataTransfer.files.length) setFiles(e.dataTransfer.files);
 });
-fileRemove.addEventListener('click', clearFile);
+fileRemove.addEventListener('click', clearFiles);
 
 // ── Progress ───────────────────────────────────────────────────────
 function setProgress(pct, label) {
@@ -454,112 +472,74 @@ clearHistoryBtn.addEventListener('click', () => {
 
 renderHistory();
 
+// ── Convert one file ───────────────────────────────────────────────
+async function convertFile(file, label) {
+  const speed=parseFloat(speedSlider.value), ampDb=parseInt(ampSlider.value), maxDur=parseInt(durSlider.value);
+  setProgress(5, `[${label}] Membaca file…`);
+  const arrayBuffer = await file.arrayBuffer();
+  setProgress(15, `[${label}] Mendekode audio…`);
+  const audioCtx = new AudioContext();
+  let audioBuffer;
+  try { audioBuffer = await audioCtx.decodeAudioData(arrayBuffer); }
+  catch(e) { throw new Error('Format tidak didukung: ' + file.name); }
+  await audioCtx.close();
+  setProgress(30, `[${label}] Menerapkan efek…`);
+  const channels=Math.min(audioBuffer.numberOfChannels,2), sampleRate=audioBuffer.sampleRate;
+  const inputSamples=Math.min(audioBuffer.length, Math.round(maxDur*sampleRate));
+  const gain=Math.pow(10,ampDb/20);
+  const channelArrays=[];
+  for(let c=0;c<channels;c++){const raw=audioBuffer.getChannelData(c).slice(0,inputSamples);for(let i=0;i<raw.length;i++)raw[i]*=gain;channelArrays.push(resample(raw,speed));}
+  setProgress(60, `[${label}] Encoding ke OGG…`);
+  const encoder=new VorbisEncoder(sampleRate,channels,0.4);
+  const chunkSize=sampleRate, totalSamples=channelArrays[0].length;
+  for(let i=0;i<totalSamples;i+=chunkSize){
+    encoder.encode(channelArrays.map(ch=>ch.slice(i,i+chunkSize)));
+    setProgress(60+Math.round((i/totalSamples)*35),`[${label}] Encoding ke OGG…`);
+    await new Promise(r=>setTimeout(r,0));
+  }
+  const oggBlob=encoder.finish();
+  const outName=file.name.replace(/\.\w+$/,'.ogg');
+  const url=URL.createObjectURL(oggBlob);
+  outputURLs.push(url);
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  addHistory({name:outName,outName,url,speed:speed.toFixed(1),speedNormal:(1/speed).toFixed(2),amp:ampDb,dur:maxDur,size:fmtBytes(oggBlob.size),date:dateStr});
+  return {url,outName};
+}
+
 // ── Main convert ───────────────────────────────────────────────────
 convertBtn.addEventListener('click', async () => {
-  if (!selectedFile) return;
-  hideError(); revokeOut();
+  if (!selectedFiles.length) return;
+  hideError(); revokeOutputs();
   downloadSection.classList.remove('show');
   convertBtn.disabled = true;
   noteBox.style.display = 'block';
-
+  const results = [];
   try {
-    setProgress(5, 'Membaca file…');
-
-    // 1. Read file as ArrayBuffer
-    const arrayBuffer = await selectedFile.arrayBuffer();
-    setProgress(15, 'Mendekode audio…');
-
-    // 2. Decode audio using Web Audio API (built-in browser decoder — supports MP3, WAV, OGG, etc.)
-    const audioCtx = new AudioContext();
-    let audioBuffer;
-    try {
-      audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-    } catch(e) {
-      throw new Error('Format audio tidak didukung oleh browser ini. Coba format MP3 atau WAV.');
+    for (let i=0; i<selectedFiles.length; i++) {
+      const file=selectedFiles[i];
+      const label=selectedFiles.length>1?`${i+1}/${selectedFiles.length}`:file.name;
+      const stEl=document.getElementById('fst-'+file.name.replace(/\W/g,'_'));
+      if(stEl){stEl.textContent='⚙️';stEl.className='fli-st run';}
+      try {
+        const r=await convertFile(file,label);
+        results.push(r);
+        if(stEl){stEl.textContent='✅';stEl.className='fli-st done';}
+      } catch(err) {
+        if(stEl){stEl.textContent='❌';stEl.className='fli-st err';}
+        showError('Gagal: '+(err.message||err));
+      }
     }
-    await audioCtx.close();
-
-    setProgress(30, 'Menerapkan efek…');
-
-    const speed  = parseFloat(speedSlider.value);
-    const ampDb  = parseInt(ampSlider.value);
-    const maxDur = parseInt(durSlider.value);
-    const channels = Math.min(audioBuffer.numberOfChannels, 2);
-    const sampleRate = audioBuffer.sampleRate;
-
-    // 3. Duration limit
-    const inputSamples = Math.min(
-      audioBuffer.length,
-      Math.round(maxDur * sampleRate)
-    );
-
-    // 4. Gain (amplification)
-    const gain = Math.pow(10, ampDb / 20);
-
-    // 5. Process each channel: apply gain + duration trim + resample
-    const channelArrays = [];
-    for (let c = 0; c < channels; c++) {
-      const raw = audioBuffer.getChannelData(c).slice(0, inputSamples);
-      // Apply gain
-      for (let i = 0; i < raw.length; i++) raw[i] *= gain;
-      // Resample for speed
-      channelArrays.push(resample(raw, speed));
+    if (results.length>0) {
+      setProgress(100,'Selesai!'); setTimeout(hideProgress,800);
+      downloadMsg.textContent=results.length===1?'✅ Konversi selesai! File siap diunduh.':`✅ ${results.length} file selesai dikonversi!`;
+      downloadLinks.innerHTML='';
+      results.forEach(r=>{const a=document.createElement('a');a.className='btn-download';a.href=r.url;a.download=r.outName;a.textContent='⬇ '+r.outName;downloadLinks.appendChild(a);});
+      downloadSection.classList.add('show');
     }
-
-    setProgress(60, 'Encoding ke OGG…');
-
-    // 6. Encode to OGG Vorbis
-    if (typeof VorbisEncoder === 'undefined' || typeof _libvorbis === 'undefined') {
-      throw new Error('OGG encoder gagal dimuat. Refresh halaman dan coba lagi.');
-    }
-    const encoder = new VorbisEncoder(sampleRate, channels, 0.4);
-    // Feed in chunks to avoid UI freeze
-    const chunkSize = sampleRate; // 1 second chunks
-    const totalSamples = channelArrays[0].length;
-    for (let i = 0; i < totalSamples; i += chunkSize) {
-      const chunk = channelArrays.map(ch => ch.slice(i, i + chunkSize));
-      encoder.encode(chunk);
-      const pct = 60 + Math.round((i / totalSamples) * 35);
-      setProgress(pct, 'Encoding ke OGG…');
-      // Yield to browser briefly
-      await new Promise(r => setTimeout(r, 0));
-    }
-    const oggBlob = encoder.finish();
-    setProgress(98, 'Menyiapkan unduhan…');
-
-    // 7. Create download
-    outputURL = URL.createObjectURL(oggBlob);
-    const outName = selectedFile.name.replace(/\.\w+$/, '.ogg');
-    downloadBtn.href = outputURL;
-    downloadBtn.download = outName;
-
-    setProgress(100, 'Selesai!');
-    setTimeout(hideProgress, 800);
-    downloadSection.classList.add('show');
-
-    // Save to history
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) +
-                    ' ' + now.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
-    addHistory({
-      name: outName,
-      outName,
-      url: outputURL,
-      speed: parseFloat(speedSlider.value).toFixed(1),
-      speedNormal: (1 / parseFloat(speedSlider.value)).toFixed(2),
-      amp: parseInt(ampSlider.value),
-      dur: parseInt(durSlider.value),
-      size: fmtBytes(oggBlob.size),
-      date: dateStr
-    });
-
-  } catch(err) {
-    hideProgress();
-    console.error(err);
-    showError('Konversi gagal: ' + (err.message || err));
   } finally {
-    convertBtn.disabled = false;
-    noteBox.style.display = 'none';
+    convertBtn.disabled=false;
+    noteBox.style.display='none';
   }
 });
 </script>
